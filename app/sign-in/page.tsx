@@ -1,16 +1,17 @@
-import Image from "next/image";
+import React from 'react'
+import Image from 'next/image'
 import logo2 from "@/app/static/images/logo2.png"
 import background from "@/app/static/images/bg-img.svg"
 import question from "@/app/static/images/info.svg"
 import arrow from "@/app/static/images/arrow.svg"
-import Signup from "./components/Signup";
-import Link from "next/link";
+import Signin from '../components/Signin'
+import footer from "@/app/static/images/bottom-bg.svg"
 
-export default function Home() {
+const page = () => {
 
   return (
-    <main className="w-full flex flex-col lg:flex-row lg:items-center lg:p-10 p-0">
-      <div className="pt-10.5 pb-7.5 lg:bg-black lg:rounded-2xl">
+    <main className="w-full flex flex-col lg:flex-row lg:p-10 p-0">
+      <div className="hidden lg:block pt-10.5 pb-7.5 lg:bg-black lg:rounded-2xl">
         <nav className="w-full flex justify-center items-center">
           <div className="flex flex-row gap items-center">
             <Image src={logo2} alt="logo" height={32} width={32} />
@@ -24,7 +25,7 @@ export default function Home() {
             <div>
               <h1 className="text-[38px] font-black">Fund,</h1>
               <h1 className="text-[38px] font-black">Play,</h1>
-              <h1 className="text-[38px] font-black">Win Crypto</h1>
+              <h1 className="text-[38px] font-black">Win USDT</h1>
             </div>
             <p className="mt-12 font-regular text-[#c8c8c8] text-[16px]">Web3 powered casino games with instant payout. No banks, no wallets, just stablecoins.</p>
           </div>
@@ -36,16 +37,18 @@ export default function Home() {
           <div className="h-full rounded-[5px] border-2 border-[#b2fa63] flex items-center justify-center px-3">
             <Image src={question} height={24} width={24} alt="question" />
           </div>
-            <button className="cursor-pointer h-full w-full bg-[#b2fa63] text-black font-black text-regular flex flex-row items-center justify-center gap-2 rounded-[5px] lg:hidden">
-              <span>Start Playing</span>
-              <Image src={arrow} alt="arrow" height={11} width={14} />
-            </button>
-
+          <button className="cursor-pointer h-full w-full bg-[#b2fa63] text-black font-black text-regular flex flex-row items-center justify-center gap-2 rounded-[5px] lg:hidden">
+            <span>Start Playing</span>
+            <Image src={arrow} alt="arrow" height={11} width={14} />
+          </button>
         </div>
 
       </div>
 
-      <Signup />
+      <Signin />
+      <Image src={footer} className='fixed lg:hidden left-0 bottom-0' alt='Flipper' />
     </main>
-  );
+  )
 }
+
+export default page
