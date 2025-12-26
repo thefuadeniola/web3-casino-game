@@ -59,7 +59,7 @@ const WalletDetails = () => {
         <div className="h-20 w-20 bg-white rounded-[50%] flex items-center justify-center">
           <div className="font-black text-gray-600">0x</div>
         </div>
-        <p className="text-white text-[22px] font-black mt-2.5">${Number(balance)} ETH</p>
+        <p className="text-white text-[22px] font-black mt-2.5">${Number(balance).toFixed(2)} ETH</p>
         <p className="font-regular text-[14px] text-[#B2FA63]">{truncateAddress(user?.wallet?.address)} |         <button onClick={() => handleCopy(user?.wallet?.address)} className="font-regular text-white text-[14px] underline cursor-pointer">{copied ? 'copied!' : 'copy'}</button></p>
       </div>
       <div className="flex flex-col lg:flex-row mt-10">

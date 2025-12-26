@@ -7,13 +7,18 @@ import Coin from '@/app/components/Coin'
 import LogoutButton from '@/app/components/LogoutBtn';
 import { useRouter } from "next/navigation";
 import WalletBalance from '@/app/components/WalletBalance';
-import { usePrivy } from '@privy-io/react-auth';
-import { getEthBalance } from '@/app/utils/utils';
+import { usePrivy, useSendTransaction } from '@privy-io/react-auth';
+import { getEthBalance, truncateAddress } from '@/app/utils/utils';
+import { parseEther } from 'viem';
+import StateUpdater from '@/app/components/StateUpdater';
+import Confetti from '@/app/components/Confetti';
 
 
 const App: React.FC = () => {
   const router = useRouter()  
   const { ready, authenticated, user } = usePrivy()
+  const { sendTransaction } = useSendTransaction()
+
   const [balance, setBalance] = useState("") 
 
     useEffect(() => {
@@ -40,37 +45,85 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<RollResult[]>([]);
   const [stake, setStake] = useState<string>("0.01");
   const [prediction, setPrediction] = useState<number>(1); // users prediction held here
+  const [message, setMessage] = useState("Sending stake...")
+  const [confetti, setConfetti] = useState(false)
 
   const contexts = useMemo(() => Object.values(GameContext), []);
 
     const handleRoll = useCallback(async () => {
         if (isRolling) return;
 
-        // 1. Determine the outcome immediately (Deterministic)
-        const newValue = context === GameContext.DICE 
-        ? Math.floor(Math.random() * 6) + 1 
-        : (Math.random() > 0.5 ? 1 : 2);  // game result here
+        const confirmed = window.confirm(
+            `Confirm to stake ${stake} eth on ${context}: ${prediction}?`
+        );
+        if (!confirmed) return;
         
-        setCurrentValue(newValue);
-        setIsRolling(true);
+        try {
+            setIsRolling(true);
+            const txHash = await sendTransaction(
+                {
+                    to: process.env.NEXT_PUBLIC_CASINO_ADDRESS,
+                    value: parseEther(stake.toString())
+                },
+                {
+                    address: user?.wallet?.address
+                }
+            )
 
-        const onComplete = () => {
+            setMessage(`Stake sent, resolving game...`)
+
+            const res = await fetch("/api/resolve-game", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    player: user?.wallet?.address,
+                    context,
+                    prediction,
+                    stake,
+                }),
+            });
+
+            const { value, isWin, multiplier } = await res.json();
+            setCurrentValue(value)
+
+            setMessage(`Game resolved, calculating winnings...`)
+
+            setTimeout(() => {
+                const newResult = {
+                    id: crypto.randomUUID(),
+                    value,
+                    prediction,
+                    stake,
+                    context,
+                    timestamp: Date.now(),
+                    isWin,
+                };
+
+                setHistory(prev => [newResult, ...prev.slice(0, 9)]);
+                setIsRolling(false);
+
+                // 4️⃣ Notify user
+                if (isWin == true) {
+                    setConfetti(true); // start confetti
+                    // stop confetti after 3 seconds
+                    setTimeout(() => setConfetti(false), 4000);                    
+                    getEthBalance(user?.wallet?.address).then(setBalance);
+                    setTimeout(() => {
+                        alert(`🎉 You won ${Number(stake) * multiplier} ETH!`);
+                    }, 4000);
+                } else {
+                    getEthBalance(user?.wallet?.address).then(setBalance);
+                    alert(`❌ You lost`);
+                }
+            }, 3000);
+
+        } catch (error) {
+            console.error(error);
             setIsRolling(false);
-            const isWin = newValue === prediction; // win result here
-
-            const newResult: RollResult = {
-                id: Math.random().toString(36).substr(2, 9),
-                value: newValue,
-                prediction: prediction,
-                stake: stake,
-                context: context,
-                timestamp: Date.now(),
-                isWin: isWin
-            };
-            setHistory(prev => [newResult, ...prev.slice(0, 9)]);
-        }; 
-
-        setTimeout(onComplete, 1100); 
+            alert("Transaction failed or rejected");
+        }
+        
+        
     }, [isRolling, context, prediction, stake]); // we can handle web3 payout/swallow here
 
   // Update default prediction when switching context
@@ -246,6 +299,8 @@ const App: React.FC = () => {
 
       {/* Account Info Bar */}
       <WalletBalance user={user} router={router} balance={balance} />
+      {isRolling && <StateUpdater message={message} />}
+        {confetti && <Confetti />}
     </div>
   );
 };

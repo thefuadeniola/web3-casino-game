@@ -38,7 +38,7 @@ const Dice: React.FC<DiceProps> = ({ value, isRolling, onAnimationComplete }) =>
         <DiceFace value={displayValue} />
       </div>
       <div className="mt-4 h-6 text-indigo-300 font-medium tracking-widest uppercase text-sm">
-        {isRolling ? "Determining Fate..." : "Result Ready"}
+        Determine your fate...
       </div>
     </div>
   );

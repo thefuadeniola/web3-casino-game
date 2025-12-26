@@ -1,12 +1,28 @@
+"use client"
+import { usePrivy } from "@privy-io/react-auth";
+import { useEffect } from "react";
 import Image from "next/image";
 import logo2 from "@/app/static/images/logo2.png"
 import background from "@/app/static/images/bg-img.svg"
 import question from "@/app/static/images/info.svg"
 import arrow from "@/app/static/images/arrow.svg"
 import Signup from "./components/Signup";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+
+  const { authenticated } = usePrivy()
+  const router = useRouter()
+
+  useEffect(() => {
+
+    if (authenticated) {
+      router.push("/play/dice"); // send to homepage / login page
+      return;
+    }
+
+  }, [authenticated]);
+  
 
   return (
     <main className="w-full flex flex-col lg:flex-row lg:items-center lg:p-10 p-0">
@@ -38,7 +54,7 @@ export default function Home() {
           </div>
             <button className="cursor-pointer h-full w-full bg-[#b2fa63] text-black font-black text-regular flex flex-row items-center justify-center gap-2 rounded-[5px] lg:hidden">
               <span>Start Playing</span>
-              <Image src={arrow} alt="arrow" height={11} width={14} />
+              <Image src={arrow} alt="arrow" height={11} width={14} className="rotate-90" />
             </button>
 
         </div>

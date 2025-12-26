@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { getEthBalance } from "../utils/utils";
+import { useEffect } from 'react'
 
 const WalletBalance = ({user, router, balance}: any) => {
     useEffect(() => {
@@ -17,7 +16,7 @@ const WalletBalance = ({user, router, balance}: any) => {
         <div className="w-2 h-2 rounded-full bg-[#b2fa63] animate-pulse"></div>
         <span className="text-xs font-bold text-zinc-400 font-mono tracking-tighter">Your balance:</span>
         <div className="h-4 w-px bg-zinc-800"></div>
-        <span className="text-xs font-bold text-zinc-400 font-mono tracking-tighter uppercase">${Number(balance)} ETH</span>
+        <span className="text-xs font-bold text-zinc-400 font-mono tracking-tighter uppercase">${Number(balance).toFixed(2)} ETH</span>
     </div>
   )
 }

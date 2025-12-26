@@ -10,7 +10,7 @@ function LogoutButton({ router }: any) {
   }
 
   return (
-    <button className="h-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-full px-6 py-3 text-zinc-400 cursor-pointer" onClick={handleLogout}>
+    <button className="h-full bg-zinc-900/80 font-mono backdrop-blur-md border border-zinc-800 rounded-full px-6 py-3 text-zinc-400 cursor-pointer" onClick={handleLogout}>
       Log out
     </button>
   );
