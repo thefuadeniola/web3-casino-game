@@ -43,7 +43,7 @@ const App: React.FC = () => {
   const [currentValue, setCurrentValue] = useState<number>(1);
   const [isRolling, setIsRolling] = useState<boolean>(false);
   const [history, setHistory] = useState<RollResult[]>([]);
-  const [stake, setStake] = useState<string>("0.01");
+  const [stake, setStake] = useState<string>("0.002");
   const [prediction, setPrediction] = useState<number>(1); // users prediction held here
   const [message, setMessage] = useState("Sending stake...")
   const [confetti, setConfetti] = useState(false)
@@ -51,6 +51,11 @@ const App: React.FC = () => {
   const contexts = useMemo(() => Object.values(GameContext), []);
 
     const handleRoll = useCallback(async () => {
+        if (balance <= stake) {
+            alert("Not enough funds to place this bet, fund your wallet.")
+            return;
+        }
+
         if (isRolling) return;
 
         const confirmed = window.confirm(
@@ -181,7 +186,7 @@ const App: React.FC = () => {
               <div className="relative">
                 <input 
                   type="number" 
-                  step="0.01"
+                  step="0.001"
                   value={stake}
                   onChange={(e) => setStake(e.target.value)}
                   disabled={isRolling}

@@ -11,6 +11,7 @@ import incoming from "@/app/static/images/deposit_icon.svg"
 import winning from "@/app/static/images/win_icon.svg"
 import debit from "@/app/static/images/withdraw_icon.svg"
 import DepositModal from "./DepositModal";
+import WithdrawModal from "./WithdrawModal";
 
 const WalletDetails = () => {
   const router = useRouter();
@@ -19,6 +20,7 @@ const WalletDetails = () => {
   const [copied, setCopied] = useState(false)
   const [balance, setBalance] = useState("")
   const [depositModal, setDepositModal] = useState(false)
+  const [withdrawModal, setWithdrawModal] = useState(false)
 
   useEffect(() => {
     if (!ready) return;
@@ -77,11 +79,11 @@ const WalletDetails = () => {
             <span>Sepolia ETH</span>
           </div>
           <div className="flex flex-row-items-center gap-3.5">
-            <button onClick={()=>setDepositModal(true)} className="h-10 flex-1 bg-[#B2FA63] flex flex-row justify-center items-center text-white rounded-lg">
+            <button onClick={()=>setDepositModal(true)} className="h-10 flex-1 bg-[#B2FA63] flex flex-row justify-center items-center text-white rounded-lg cursor-pointer">
               <Image src={deposit} alt="deposit" height={14} width={10} className="mr-2" />
               Deposit
             </button>
-            <button className="h-10 flex-1 bg-[#535353] flex flex-row justify-center items-center text-white rounded-lg">
+            <button onClick={()=>setWithdrawModal(true)} className="h-10 flex-1 bg-[#535353] flex flex-row justify-center items-center text-white rounded-lg cursor-pointer">
               <Image src={deposit} alt="deposit" height={14} width={10} className="mr-2 rotate-180" />
               Withdraw
             </button>
@@ -141,6 +143,8 @@ const WalletDetails = () => {
         </div>
       </div>
       {depositModal && <DepositModal setDepositModal={setDepositModal} walletAddress={user?.wallet?.address} handleCopy={handleCopy} />}
+      {withdrawModal && <WithdrawModal setWithdrawModal={setWithdrawModal} walletAddress={user?.wallet?.address} />}
+
     </div>
   )
 }
