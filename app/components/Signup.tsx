@@ -46,7 +46,7 @@ const Signup = () => {
         try {
             setLoading(true);
             await loginWithCode({code})
-            router.push('/profile')
+            router.push('/play/dice')
         } catch (error) {
             setLoading(false);
             console.log("Error logging in: ", error);

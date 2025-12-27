@@ -11,8 +11,11 @@ import { usePrivy, useSendTransaction } from '@privy-io/react-auth';
 import { getEthBalance, truncateAddress } from '@/app/utils/utils';
 import { parseEther } from 'viem';
 import StateUpdater from '@/app/components/StateUpdater';
-import Confetti from '@/app/components/Confetti';
+import dynamic from "next/dynamic"
 
+const Confetti = dynamic(() => import('@/app/components/Confetti'), {
+  ssr: false,
+});
 
 const App: React.FC = () => {
   const router = useRouter()  
@@ -95,7 +98,7 @@ const App: React.FC = () => {
 
             setTimeout(() => {
                 const newResult = {
-                    id: crypto.randomUUID(),
+                    id: typeof window !== "undefined" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
                     value,
                     prediction,
                     stake,

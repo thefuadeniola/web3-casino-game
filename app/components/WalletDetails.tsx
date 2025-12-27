@@ -1,51 +1,60 @@
-"use client"
+"use client";
+
 import { useEffect, useState } from "react";
-import { usePrivy } from "@privy-io/react-auth"
-import { useCreateWallet } from "@privy-io/react-auth";
+import { usePrivy, useCreateWallet } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
-import { truncateAddress } from "../utils/utils";
-import { getEthBalance } from "../utils/utils";
-import deposit from "@/app/static/images/deposit.svg"
 import Image from "next/image";
-import incoming from "@/app/static/images/deposit_icon.svg"
-import winning from "@/app/static/images/win_icon.svg"
-import debit from "@/app/static/images/withdraw_icon.svg"
+
+import { truncateAddress, getEthBalance } from "../utils/utils";
+
+import deposit from "@/app/static/images/deposit.svg";
+import incoming from "@/app/static/images/deposit_icon.svg";
+import winning from "@/app/static/images/win_icon.svg";
+import debit from "@/app/static/images/withdraw_icon.svg";
+
 import DepositModal from "./DepositModal";
 import WithdrawModal from "./WithdrawModal";
 
 const WalletDetails = () => {
   const router = useRouter();
   const { user, ready, authenticated } = usePrivy();
-  const { createWallet } = useCreateWallet()
-  const [copied, setCopied] = useState(false)
-  const [balance, setBalance] = useState("")
-  const [depositModal, setDepositModal] = useState(false)
-  const [withdrawModal, setWithdrawModal] = useState(false)
+  const { createWallet } = useCreateWallet();
 
+  const [balance, setBalance] = useState<string>("0");
+  const [copied, setCopied] = useState(false);
+  const [depositModal, setDepositModal] = useState(false);
+  const [withdrawModal, setWithdrawModal] = useState(false);
+  const [walletCreating, setWalletCreating] = useState(false);
+
+  /* ------------------ Auth / Wallet Init ------------------ */
   useEffect(() => {
     if (!ready) return;
 
     if (!authenticated) {
-      // user is not logged in → redirect
-      router.push("/"); // send to homepage / login page
+      router.replace("/");
       return;
     }
 
-    if (!user?.wallet) {
-      createWallet(); 
+    if (!user?.wallet && !walletCreating) {
+      setWalletCreating(true);
+      createWallet().finally(() => setWalletCreating(false));
     }
+  }, [ready, authenticated, user, walletCreating, createWallet, router]);
 
-  }, [ready, authenticated, user, createWallet]);
-
+  /* ------------------ Balance Fetch ------------------ */
   useEffect(() => {
-    if (!user?.wallet) return;
+    if (!user?.wallet?.address) return;
 
-    getEthBalance(user?.wallet?.address).then(setBalance);
-  }, [user]);
+    getEthBalance(user.wallet.address)
+      .then((bal) => setBalance(bal ?? "0"))
+      .catch(() => setBalance("0"));
+  }, [user?.wallet?.address]);
 
-  if (!ready) return <div>Loading…</div>;
+  /* ------------------ Clipboard ------------------ */
+  const handleCopy = async (text?: string) => {
+    if (!text || typeof window === "undefined") return;
+    if (!navigator?.clipboard) return;
 
-  const handleCopy = async (text: any) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -53,100 +62,138 @@ const WalletDetails = () => {
     } catch (err) {
       console.error("Copy failed", err);
     }
+  };
+
+  if (!ready) {
+    return <div className="text-white">Loading…</div>;
   }
+
+  const displayBalance =
+    balance && !isNaN(Number(balance))
+      ? Number(balance).toFixed(4)
+      : "0.0000";
+
+  const walletAddress = user?.wallet?.address;
 
   return (
     <div className="pt-6">
+      {/* ------------------ Header ------------------ */}
       <div className="w-full flex flex-col items-center justify-center">
-        <div className="h-20 w-20 bg-white rounded-[50%] flex items-center justify-center">
+        <div className="h-20 w-20 bg-white rounded-full flex items-center justify-center">
           <div className="font-black text-gray-600">0x</div>
         </div>
-        <p className="text-white text-[22px] font-black mt-2.5">${Number(balance).toFixed(2)} ETH</p>
-        <p className="font-regular text-[14px] text-[#B2FA63]">{truncateAddress(user?.wallet?.address)} |         <button onClick={() => handleCopy(user?.wallet?.address)} className="font-regular text-white text-[14px] underline cursor-pointer">{copied ? 'copied!' : 'copy'}</button></p>
+
+        <p className="text-white text-[22px] font-black mt-2.5">
+          {displayBalance} ETH
+        </p>
+
+        {walletAddress && (
+          <p className="text-[14px] text-[#B2FA63]">
+            {truncateAddress(walletAddress)} |{" "}
+            <button
+              onClick={() => handleCopy(walletAddress)}
+              className="text-white underline"
+            >
+              {copied ? "copied!" : "copy"}
+            </button>
+          </p>
+        )}
       </div>
+
+      {/* ------------------ Wallet Info ------------------ */}
       <div className="flex flex-col lg:flex-row mt-10">
-        <div className="lg:flex-1 h-fit rounded-lg px-4 py-5 flex flex-col gap-3.5 w-full bg-[#28282A]">
-          <div className="flex flex-row-items-center justify-between text-white">
-            <span>Email</span>
-            <span>{user?.email?.address}</span>
-          </div>
-          <div className="flex flex-row-items-center justify-between text-white">
-            <span>Address</span>
-            <span>{truncateAddress(user?.wallet?.address)}</span>
-          </div>
-          <div className="flex flex-row-items-center justify-between text-white">
-            <span>Native currency</span>
-            <span>Sepolia ETH</span>
-          </div>
-          <div className="flex flex-row-items-center gap-3.5">
-            <button onClick={()=>setDepositModal(true)} className="h-10 flex-1 bg-[#B2FA63] flex flex-row justify-center items-center text-white rounded-lg cursor-pointer">
+        <div className="lg:flex-1 rounded-lg px-4 py-5 bg-[#28282A] space-y-3.5">
+          <Row label="Email" value={user?.email?.address} />
+          <Row label="Address" value={truncateAddress(walletAddress)} />
+          <Row label="Native currency" value="Sepolia ETH" />
+
+          <div className="flex gap-3.5 pt-2">
+            <button
+              onClick={() => setDepositModal(true)}
+              className="h-10 flex-1 bg-[#B2FA63] text-white rounded-lg flex items-center justify-center"
+            >
               <Image src={deposit} alt="deposit" height={14} width={10} className="mr-2" />
               Deposit
             </button>
-            <button onClick={()=>setWithdrawModal(true)} className="h-10 flex-1 bg-[#535353] flex flex-row justify-center items-center text-white rounded-lg cursor-pointer">
-              <Image src={deposit} alt="deposit" height={14} width={10} className="mr-2 rotate-180" />
+
+            <button
+              onClick={() => setWithdrawModal(true)}
+              className="h-10 flex-1 bg-[#535353] text-white rounded-lg flex items-center justify-center"
+            >
+              <Image
+                src={deposit}
+                alt="withdraw"
+                height={14}
+                width={10}
+                className="mr-2 rotate-180"
+              />
               Withdraw
             </button>
           </div>
         </div>
 
-        <div className="ml-0 lg:ml-6 mt-6 lg:mt-0 lg:flex-1">
+        {/* ------------------ Transactions (Static) ------------------ */}
+        <div className="lg:flex-1 lg:ml-6 mt-6 lg:mt-0">
           <h1 className="font-black text-white">Transactions</h1>
-          <div className="rounded-lg mt-2.5 bg-[#28282A] flex flex-col w-full">
-            <div className="flex flex-row justify-between items-center px-3 py-4">
-              <div className="flex flex-row items-center gap-2.5">
-                <Image src={debit} alt="incoming" />
-                <div className="">
-                  <h1 className="text-white font-bold text-[14px]">Debit</h1>
-                  <p className="text-[#c20000] text-[12px]">coin flip</p>
-                </div>
-              </div>
-
-              <span className="text-white font-black text-14px">- $30.00</span>
-            </div>
-
-            <div className="flex flex-row justify-between items-center px-3 py-4">
-              <div className="flex flex-row items-center gap-2.5">
-                <Image src={debit} alt="debit" />
-                <div className="">
-                  <h1 className="text-white font-bold text-[14px]">Debit</h1>
-                  <p className="text-[#c20000] text-[12px]">dice roll</p>
-                </div>
-              </div>
-
-              <span className="text-white font-black text-14px">- $30.00</span>
-            </div>
-            <div className="flex flex-row justify-between items-center px-3 py-4">
-              <div className="flex flex-row items-center gap-2.5">
-                <Image src={winning} alt="incoming" />
-                <div className="">
-                  <h1 className="text-white font-bold text-[14px]">Winning</h1>
-                  <p className="text-[#B2FA63] text-[12px]">dice roll</p>
-                </div>
-              </div>
-
-              <span className="text-white font-black text-14px">+ $30.00</span>
-            </div>
-            <div className="flex flex-row justify-between items-center px-3 py-4">
-              <div className="flex flex-row items-center gap-2.5">
-                <Image src={incoming} alt="incoming" />
-                <div className="">
-                  <h1 className="text-white font-bold text-[14px]">Deposit</h1>
-                  <p className="text-[#B2FA63] text-[12px]">external deposit</p>
-                </div>
-              </div>
-
-              <span className="text-white font-black text-14px">+ $30.00</span>
-            </div>
-
+          <div className="rounded-lg mt-2.5 bg-[#28282A]">
+            <TxRow icon={debit} title="Debit" sub="coin flip" value="- $30.00" color="text-red-500" />
+            <TxRow icon={debit} title="Debit" sub="dice roll" value="- $30.00" color="text-red-500" />
+            <TxRow icon={winning} title="Winning" sub="dice roll" value="+ $30.00" color="text-[#B2FA63]" />
+            <TxRow icon={incoming} title="Deposit" sub="external deposit" value="+ $30.00" color="text-[#B2FA63]" />
           </div>
         </div>
       </div>
-      {depositModal && <DepositModal setDepositModal={setDepositModal} walletAddress={user?.wallet?.address} handleCopy={handleCopy} />}
-      {withdrawModal && <WithdrawModal setWithdrawModal={setWithdrawModal} walletAddress={user?.wallet?.address} />}
 
+      {/* ------------------ Modals ------------------ */}
+      {depositModal && walletAddress && (
+        <DepositModal
+          setDepositModal={setDepositModal}
+          walletAddress={walletAddress}
+          handleCopy={handleCopy}
+        />
+      )}
+
+      {withdrawModal && walletAddress && (
+        <WithdrawModal
+          setWithdrawModal={setWithdrawModal}
+          walletAddress={walletAddress}
+        />
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default WalletDetails
+/* ------------------ Small Components ------------------ */
+const Row = ({ label, value }: { label: string; value?: string }) => (
+  <div className="flex justify-between text-white text-sm">
+    <span>{label}</span>
+    <span>{value ?? "-"}</span>
+  </div>
+);
+
+const TxRow = ({
+  icon,
+  title,
+  sub,
+  value,
+  color,
+}: {
+  icon: any;
+  title: string;
+  sub: string;
+  value: string;
+  color: string;
+}) => (
+  <div className="flex justify-between items-center px-3 py-4 border-b border-zinc-700 last:border-none">
+    <div className="flex items-center gap-2.5">
+      <Image src={icon} alt={title} />
+      <div>
+        <h1 className="text-white font-bold text-sm">{title}</h1>
+        <p className={`${color} text-xs`}>{sub}</p>
+      </div>
+    </div>
+    <span className="text-white font-black">{value}</span>
+  </div>
+);
+
+export default WalletDetails;
